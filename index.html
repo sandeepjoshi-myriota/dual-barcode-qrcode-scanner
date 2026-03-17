@@ -53,34 +53,33 @@
             msg.innerText = "Camera Error: " + err;
         });
 
-        function onScanSuccess(decodedText, decodedResult) {
-            const format = decodedResult.result.format.formatName;
-            
-            // Log for debugging
-            console.log(`Found: ${decodedText} (${format})`);
+function onScanSuccess(decodedText, decodedResult) {
+    // 1. Safety check: Ignore if the text is empty or exactly the same as the first scan
+    if (!decodedText || decodedText === qrData) return;
 
-            if (format === "QR_CODE") {
-                if (!qrData) {
-                    qrData = decodedText;
-                    document.getElementById('qr-val').innerText = qrData;
-                    document.getElementById('qr-box').className = 'box success';
-                    msg.innerText = "QR Captured! Now scan the Barcode.";
-                    vibrate();
-                }
-            } else {
-                if (!barData) {
-                    barData = decodedText;
-                    document.getElementById('bar-val').innerText = barData;
-                    document.getElementById('bar-box').className = 'box success';
-                    msg.innerText = "Barcode Captured! Ready to submit.";
-                    vibrate();
-                }
-            }
+    console.log("Captured:", decodedText);
 
-            if (qrData && barData) {
-                document.getElementById('submit-btn').style.display = 'inline-block';
-            }
-        }
+    // 2. Logic: Fill the first empty slot available
+    if (!qrData) {
+        // First scan ever
+        qrData = decodedText;
+        document.getElementById('qr-val').innerText = qrData;
+        document.getElementById('qr-box').classList.add('success');
+        vibrate();
+        msg.innerText = "First code saved. Scan the second one.";
+    } 
+    else if (!barData) {
+        // Second scan
+        barData = decodedText;
+        document.getElementById('bar-val').innerText = barData;
+        document.getElementById('bar-box').classList.add('success');
+        vibrate();
+        msg.innerText = "Both codes captured. Tap Submit.";
+        
+        // Show the button
+        document.getElementById('submit-btn').style.display = 'block';
+    }
+}
 
         async function submitData() {
             const URL = "https://webhook.site/0d325d7d-a0d0-4c39-a6e3-e03db1fccfd3";
