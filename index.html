@@ -49,7 +49,7 @@
             console.log("Sending pair:", { qr, bar });
             
             try {
-                const response = await fetch('https://your-api-endpoint.com/data', {
+                const response = await fetch('https://webhook.site/0d325d7d-a0d0-4c39-a6e3-e03db1fccfd3', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ qr_code: qr, barcode: bar, timestamp: new Date() })
