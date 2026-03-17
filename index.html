@@ -25,25 +25,16 @@
         let qrData = null;
         let barData = null;
 
-        function onScanSuccess(decodedText, decodedResult) {
-            const format = decodedResult.result.format.formatName;
-            
-            // Logic to distinguish between QR and Barcode
-            if (format === "QR_CODE" && !qrData) {
-                qrData = decodedText;
-                document.getElementById('qr-val').innerText = qrData;
-                document.getElementById('qr-val').classList.add('captured');
-            } else if (format !== "QR_CODE" && !barData) {
-                barData = decodedText;
-                document.getElementById('bar-val').innerText = barData;
-                document.getElementById('bar-val').classList.add('captured');
-            }
-
-            // If both are found, send to server
-            if (qrData && barData) {
-                sendToServer(qrData, barData);
-            }
-        }
+       function onScanSuccess(decodedText) {
+    if (!qrData) {
+        qrData = decodedText;
+        updateUI('qr-val', qrData);
+    } else if (!barData && decodedText !== qrData) { // Prevents scanning the same code twice
+        barData = decodedText;
+        updateUI('bar-val', barData);
+        sendToServer(qrData, barData);
+    }
+}
 
         async function sendToServer(qr, bar) {
             console.log("Sending pair:", { qr, bar });
