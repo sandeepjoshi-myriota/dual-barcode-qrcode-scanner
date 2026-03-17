@@ -3,135 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual Dual Scanner</title>
+    <title>Precision Dual Scanner</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: system-ui, sans-serif; text-align: center; background: #f4f4f9; padding: 20px; color: #333; }
-        #reader { width: 100%; max-width: 500px; margin: 20px auto; border-radius: 12px; overflow: hidden; border: 2px solid #444; background: #000; }
-        
-        .data-display { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
-        .box { padding: 15px; background: white; border: 2px solid #ddd; border-radius: 10px; flex: 1; max-width: 200px; transition: all 0.3s; }
-        .filled { border-color: #28a745; background: #e8f5e9; transform: scale(1.05); }
-        
-        .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        button { padding: 12px 30px; font-size: 16px; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; width: 220px; }
-        
-        #submit-btn { background: #007bff; color: white; opacity: 0.4; cursor: not-allowed; }
-        #submit-btn.ready { opacity: 1; cursor: pointer; background: #28a745; box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3); }
-        
-        .btn-reset { background: #6c757d; color: white; }
-        .btn-reset:hover { background: #5a6268; }
+        body { font-family: sans-serif; text-align: center; background: #f8f9fa; padding: 20px; }
+        #reader { width: 100%; max-width: 500px; margin: auto; background: #000; border-radius: 8px; }
+        .stats { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+        .box { padding: 15px; background: #fff; border: 2px solid #ddd; border-radius: 8px; flex: 1; }
+        .active { border-color: #007bff; background: #e7f1ff; }
+        .success { border-color: #28a745; background: #d4edda; }
+        #msg { color: #666; font-size: 0.9em; margin-top: 10px; }
+        button { padding: 15px 30px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; margin: 5px; }
+        #submit-btn { background: #28a745; color: white; display: none; width: 100%; max-width: 500px; }
+        .btn-clear { background: #6c757d; color: white; }
     </style>
 </head>
 <body>
 
-    <h2>Dual Scanner Pair</h2>
+    <h3>Step 1: Scan QR | Step 2: Scan Barcode</h3>
     
-    <div class="data-display">
-        <div id="qr-box" class="box">
-            <strong>QR Code</strong><br>
-            <span id="qr-text">---</span>
-        </div>
-        <div id="bar-box" class="box">
-            <strong>Barcode</strong><br>
-            <span id="bar-text">---</span>
-        </div>
-    </div>
-
     <div id="reader"></div>
+    <p id="msg">Initializing camera...</p>
 
-    <div class="controls">
-        <button id="submit-btn" onclick="submitPair()" disabled>Submit Pair</button>
-        <button class="btn-reset" onclick="resetState()">Clear & Reset</button>
+    <div class="stats">
+        <div id="qr-box" class="box"><strong>QR Code</strong><div id="qr-val">---</div></div>
+        <div id="bar-box" class="box"><strong>Barcode</strong><div id="bar-val">---</div></div>
     </div>
+
+    <button id="submit-btn" onclick="submitData()">Submit Pair</button>
+    <button class="btn-clear" onclick="resetApp()">Clear All</button>
 
     <script>
         let qrData = null;
         let barData = null;
+        const html5QrCode = new Html5Qrcode("reader");
+        const msg = document.getElementById('msg');
 
-        // --- CONFIGURATION ---
-        const WEBHOOK_URL = 'https://webhook.site/0d325d7d-a0d0-4c39-a6e3-e03db1fccfd3'; 
-        // ---------------------
+        const config = { fps: 15, qrbox: { width: 300, height: 150 } };
+
+        // Start Scanner immediately
+        Html5Qrcode.getCameras().then(cameras => {
+            if (cameras && cameras.length > 0) {
+                // Use the back camera (last in the array usually)
+                const cameraId = cameras[cameras.length - 1].id;
+                html5QrCode.start(cameraId, config, onScanSuccess);
+                msg.innerText = "Camera Active. Point at a code.";
+            }
+        }).catch(err => {
+            msg.innerText = "Camera Error: " + err;
+        });
 
         function onScanSuccess(decodedText, decodedResult) {
             const format = decodedResult.result.format.formatName;
             
-            // Logic to assign scan to the correct slot
+            // Log for debugging
+            console.log(`Found: ${decodedText} (${format})`);
+
             if (format === "QR_CODE") {
                 if (!qrData) {
                     qrData = decodedText;
-                    document.getElementById('qr-text').innerText = qrData;
-                    document.getElementById('qr-box').classList.add('filled');
+                    document.getElementById('qr-val').innerText = qrData;
+                    document.getElementById('qr-box').className = 'box success';
+                    msg.innerText = "QR Captured! Now scan the Barcode.";
+                    vibrate();
                 }
             } else {
                 if (!barData) {
                     barData = decodedText;
-                    document.getElementById('bar-text').innerText = barData;
-                    document.getElementById('bar-box').classList.add('filled');
+                    document.getElementById('bar-val').innerText = barData;
+                    document.getElementById('bar-box').className = 'box success';
+                    msg.innerText = "Barcode Captured! Ready to submit.";
+                    vibrate();
                 }
             }
 
-            // Enable the button only when both slots are filled
-            checkReadyStatus();
-        }
-
-        function checkReadyStatus() {
-            const btn = document.getElementById('submit-btn');
             if (qrData && barData) {
-                btn.disabled = false;
-                btn.classList.add('ready');
-                btn.innerText = "Submit to Server";
-            } else {
-                btn.disabled = true;
-                btn.classList.remove('ready');
-                btn.innerText = "Waiting for Both...";
+                document.getElementById('submit-btn').style.display = 'inline-block';
             }
         }
 
-        async function submitPair() {
-            if (!qrData || !barData) return;
-
-            const btn = document.getElementById('submit-btn');
-            btn.innerText = "Sending...";
-            btn.disabled = true;
-
+        async function submitData() {
+            const URL = "https://webhook.site/0d325d7d-a0d0-4c39-a6e3-e03db1fccfd3";
+            msg.innerText = "Sending...";
+            
             try {
-                await fetch(WEBHOOK_URL, {
+                await fetch(URL, {
                     method: 'POST',
-                    mode: 'no-cors', 
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        qr_content: qrData,
-                        barcode_content: barData,
-                        timestamp: new Date().toISOString()
-                    })
+                    mode: 'no-cors',
+                    body: JSON.stringify({ qr: qrData, barcode: barData })
                 });
-
-                alert("Data paired and sent!");
-                resetState();
-            } catch (error) {
-                alert("Submission failed. Check your Webhook URL.");
-                console.error(error);
-                checkReadyStatus(); // Re-enable button if it failed
+                alert("Success!");
+                resetApp();
+            } catch (e) {
+                alert("Error sending. Check URL.");
             }
         }
 
-        function resetState() {
+        function resetApp() {
             qrData = null;
             barData = null;
-            document.getElementById('qr-text').innerText = "---";
-            document.getElementById('bar-text').innerText = "---";
-            document.getElementById('qr-box').classList.remove('filled');
-            document.getElementById('bar-box').classList.remove('filled');
-            checkReadyStatus();
+            document.getElementById('qr-val').innerText = "---";
+            document.getElementById('bar-val').innerText = "---";
+            document.getElementById('qr-box').className = 'box';
+            document.getElementById('bar-box').className = 'box';
+            document.getElementById('submit-btn').style.display = 'none';
+            msg.innerText = "Scan a code to begin.";
         }
 
-        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
-            fps: 15, 
-            qrbox: { width: 300, height: 180 },
-            aspectRatio: 1.77
-        });
-        html5QrcodeScanner.render(onScanSuccess);
+        function vibrate() {
+            if (navigator.vibrate) navigator.vibrate(100);
+        }
     </script>
 </body>
 </html>
