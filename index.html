@@ -22,51 +22,64 @@
     </div>
 
     <script>
-        let qrData = null;
-        let barData = null;
+let qrData = null;
+let barData = null;
+let isProcessing = false; // Prevents "double-tap" scans in one millisecond
 
-       function onScanSuccess(decodedText) {
+function onScanSuccess(decodedText, decodedResult) {
+    if (isProcessing) return;
+    
+    // 1. Check if we already scanned this exact text in this session
+    if (decodedText === qrData || decodedText === barData) return;
+
+    isProcessing = true;
+
     if (!qrData) {
+        // First scan goes here
         qrData = decodedText;
         updateUI('qr-val', qrData);
-    } else if (!barData && decodedText !== qrData) { // Prevents scanning the same code twice
+        vibratePhone();
+    } else if (!barData) {
+        // Second scan goes here
         barData = decodedText;
         updateUI('bar-val', barData);
+        vibratePhone();
         sendToServer(qrData, barData);
     }
+
+    // Brief timeout to let the user move the camera to the next code
+    setTimeout(() => { isProcessing = false; }, 1500);
 }
 
-        async function sendToServer(qr, bar) {
-            console.log("Sending pair:", { qr, bar });
-            
-            try {
-                const response = await fetch('https://webhook.site/0d325d7d-a0d0-4c39-a6e3-e03db1fccfd3', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ qr_code: qr, barcode: bar, timestamp: new Date() })
-                });
-                
-                if (response.ok) {
-                    alert("Data paired and sent successfully!");
-                    resetScanner();
-                }
-            } catch (err) {
-                alert("Server error. Check console.");
-                console.error(err);
-            }
-        }
+function updateUI(id, text) {
+    const el = document.getElementById(id);
+    el.innerText = text;
+    el.style.background = "#d4edda"; // Light green highlight
+    el.style.fontWeight = "bold";
+}
 
-        function resetScanner() {
-            qrData = null;
-            barData = null;
-            document.getElementById('qr-val').innerText = "Waiting...";
-            document.getElementById('bar-val').innerText = "Waiting...";
-            document.getElementById('qr-val').classList.remove('captured');
-            document.getElementById('bar-val').classList.remove('captured');
-        }
+function vibratePhone() {
+    if (navigator.vibrate) navigator.vibrate(100);
+}
 
-        const html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-        html5QrcodeScanner.render(onScanSuccess);
+function resetScanner() {
+    qrData = null;
+    barData = null;
+    isProcessing = false;
+    document.getElementById('qr-val').innerText = "Waiting...";
+    document.getElementById('bar-val').innerText = "Waiting...";
+    document.getElementById('qr-val').style.background = "transparent";
+    document.getElementById('bar-val').style.background = "transparent";
+}
+
+// Optimized Scanner Config
+const html5QrcodeScanner = new Html5QrcodeScanner("reader", { 
+    fps: 15, 
+    qrbox: { width: 250, height: 150 }, // Rectangular box helps with long barcodes
+    rememberLastUsedCamera: true,
+    aspectRatio: 1.777778 // 16:9 for better mobile view
+});
+html5QrcodeScanner.render(onScanSuccess);
     </script>
 </body>
 </html>
