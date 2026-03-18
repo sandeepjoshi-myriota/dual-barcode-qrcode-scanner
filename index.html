@@ -36,7 +36,7 @@
     </div>
 
     <div class="controls">
-        <button id="submit-btn" onclick="handleSubmit()">Save Pair to Cache</button>
+        <button id="submit-btn" onclick="handleSubmit()">Save Pair to CSV</button>
         <button id="download-btn" onclick="downloadCSV()">Download CSV (Export Cache)</button>
         <button class="btn-clear" onclick="resetCurrentScan()">Clear Current Scan</button>
         <button class="btn-danger" onclick="clearFullHistory()">Wipe All History</button>
@@ -74,13 +74,13 @@
                 document.getElementById('qr-val').innerText = qrData;
                 document.getElementById('qr-box').classList.add('success');
                 vibrate();
-                msg.innerText = "First code captured. Scan the next.";
+                msg.innerText = "QR code captured. Scan the bar-code on the SIM card.";
             } else if (!barData && decodedText !== qrData) {
                 barData = decodedText;
                 document.getElementById('bar-val').innerText = barData;
                 document.getElementById('bar-box').classList.add('success');
                 vibrate();
-                msg.innerText = "Pair complete. Ready to save.";
+                msg.innerText = "Data capture complete. Ready to save.";
                 document.getElementById('submit-btn').style.display = 'block';
             }
         }
@@ -95,7 +95,7 @@
             updateHistoryUI();
 
             // 2. Post to Webhook (Optional - replace URL)
-            const WEBHOOK_URL = "YOUR_WEBHOOK_URL_HERE";
+            const WEBHOOK_URL = "https://webhook.site/0d325d7d-a0d0-4c39-a6e3-e03db1fccfd3";
             try {
                 await fetch(WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(newEntry) });
             } catch (e) { console.log("Webhook skipped."); }
@@ -140,7 +140,7 @@
             document.getElementById('qr-box').classList.remove('success');
             document.getElementById('bar-box').classList.remove('success');
             document.getElementById('submit-btn').style.display = 'none';
-            msg.innerText = "Scan first code.";
+            msg.innerText = "Scan the QR code on your AssetHawk first.";
         }
 
         function clearFullHistory() {
