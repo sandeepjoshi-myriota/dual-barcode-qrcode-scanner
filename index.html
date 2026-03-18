@@ -64,6 +64,10 @@
                 const cameraId = cameras[cameras.length - 1].id;
                 html5QrCode.start(cameraId, config, onScanSuccess);
                 msg.innerText = "Camera Active.";
+                setTimeout(() => {
+  console.log("This runs after 2 seconds");
+}, 4000); // 4000 milliseconds = 4 seconds
+                msg.innerText = "Scan the QR code on your AssetHawk first.";
             }
         });
 
