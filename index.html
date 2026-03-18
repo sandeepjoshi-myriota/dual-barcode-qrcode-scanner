@@ -3,35 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Precision Dual Scanner</title>
+    <title>Dual Scanner + Manual Export</title>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f8f9fa; padding: 20px; }
+        body { font-family: sans-serif; text-align: center; background: #f8f9fa; padding: 15px; margin: 0; }
         #reader { width: 100%; max-width: 500px; margin: auto; background: #000; border-radius: 8px; }
-        .stats { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
-        .box { padding: 15px; background: #fff; border: 2px solid #ddd; border-radius: 8px; flex: 1; }
-        .active { border-color: #007bff; background: #e7f1ff; }
+        .stats { display: flex; gap: 10px; justify-content: center; margin: 15px 0; }
+        .box { padding: 10px; background: #fff; border: 2px solid #ddd; border-radius: 8px; flex: 1; font-size: 0.9em; }
         .success { border-color: #28a745; background: #d4edda; }
-        #msg { color: #666; font-size: 0.9em; margin-top: 10px; }
-        button { padding: 15px 30px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; margin: 5px; }
-        #submit-btn { background: #28a745; color: white; display: none; width: 100%; max-width: 500px; }
+        #msg { color: #666; font-size: 0.85em; margin: 10px 0; min-height: 1.2em; }
+        
+        .controls { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+        button { padding: 15px; width: 100%; max-width: 500px; font-size: 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        
+        #submit-btn { background: #28a745; color: white; display: none; }
+        #download-btn { background: #007bff; color: white; margin-top: 10px; }
         .btn-clear { background: #6c757d; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        
+        #history-status { margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 5px; font-size: 0.9em; }
     </style>
 </head>
 <body>
 
-    <h3>Step 1: Scan QR | Step 2: Scan Barcode</h3>
-    
+    <h3>QR & Barcode Logger</h3>
     <div id="reader"></div>
     <p id="msg">Initializing camera...</p>
 
     <div class="stats">
-        <div id="qr-box" class="box"><strong>QR Code</strong><div id="qr-val">---</div></div>
-        <div id="bar-box" class="box"><strong>Barcode</strong><div id="bar-val">---</div></div>
+        <div id="qr-box" class="box"><strong>Scan 1</strong><div id="qr-val">---</div></div>
+        <div id="bar-box" class="box"><strong>Scan 2</strong><div id="bar-val">---</div></div>
     </div>
 
-    <button id="submit-btn" onclick="submitData()">Submit Pair</button>
-    <button class="btn-clear" onclick="resetApp()">Clear All</button>
+    <div class="controls">
+        <button id="submit-btn" onclick="handleSubmit()">Save Pair to Cache</button>
+        <button id="download-btn" onclick="downloadCSV()">Download CSV (Export Cache)</button>
+        <button class="btn-clear" onclick="resetCurrentScan()">Clear Current Scan</button>
+        <button class="btn-danger" onclick="clearFullHistory()">Wipe All History</button>
+    </div>
+
+    <div id="history-status">
+        Items in local cache: <span id="count">0</span>
+    </div>
 
     <script>
         let qrData = null;
@@ -39,79 +52,106 @@
         const html5QrCode = new Html5Qrcode("reader");
         const msg = document.getElementById('msg');
 
+        // Load existing history from Browser Cache
+        let scanHistory = JSON.parse(localStorage.getItem('scan_history')) || [];
+        updateHistoryUI();
+
         const config = { fps: 15, qrbox: { width: 300, height: 150 } };
 
-        // Start Scanner immediately
+        // Start Camera
         Html5Qrcode.getCameras().then(cameras => {
-            if (cameras && cameras.length > 0) {
-                // Use the back camera (last in the array usually)
+            if (cameras.length > 0) {
                 const cameraId = cameras[cameras.length - 1].id;
                 html5QrCode.start(cameraId, config, onScanSuccess);
-                msg.innerText = "Camera Active. Point at a code.";
+                msg.innerText = "Camera Active.";
             }
-        }).catch(err => {
-            msg.innerText = "Camera Error: " + err;
         });
 
-function onScanSuccess(decodedText, decodedResult) {
-    // 1. Safety check: Ignore if the text is empty or exactly the same as the first scan
-    if (!decodedText || decodedText === qrData) return;
-
-    console.log("Captured:", decodedText);
-
-    // 2. Logic: Fill the first empty slot available
-    if (!qrData) {
-        // First scan ever
-        qrData = decodedText;
-        document.getElementById('qr-val').innerText = qrData;
-        document.getElementById('qr-box').classList.add('success');
-        vibrate();
-        msg.innerText = "First code saved. Scan the second one.";
-    } 
-    else if (!barData) {
-        // Second scan
-        barData = decodedText;
-        document.getElementById('bar-val').innerText = barData;
-        document.getElementById('bar-box').classList.add('success');
-        vibrate();
-        msg.innerText = "Both codes captured. Tap Submit.";
-        
-        // Show the button
-        document.getElementById('submit-btn').style.display = 'block';
-    }
-}
-
-        async function submitData() {
-            const URL = "https://webhook.site/0d325d7d-a0d0-4c39-a6e3-e03db1fccfd3";
-            msg.innerText = "Sending...";
-            
-            try {
-                await fetch(URL, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: JSON.stringify({ qr: qrData, barcode: barData })
-                });
-                alert("Success!");
-                resetApp();
-            } catch (e) {
-                alert("Error sending. Check URL.");
+        function onScanSuccess(decodedText, decodedResult) {
+            // Logic: Fill first box, then second box
+            if (!qrData) {
+                qrData = decodedText;
+                document.getElementById('qr-val').innerText = qrData;
+                document.getElementById('qr-box').classList.add('success');
+                vibrate();
+                msg.innerText = "First code captured. Scan the next.";
+            } else if (!barData && decodedText !== qrData) {
+                barData = decodedText;
+                document.getElementById('bar-val').innerText = barData;
+                document.getElementById('bar-box').classList.add('success');
+                vibrate();
+                msg.innerText = "Pair complete. Ready to save.";
+                document.getElementById('submit-btn').style.display = 'block';
             }
         }
 
-        function resetApp() {
-            qrData = null;
-            barData = null;
-            document.getElementById('qr-val').innerText = "---";
-            document.getElementById('bar-val').innerText = "---";
-            document.getElementById('qr-box').className = 'box';
-            document.getElementById('bar-box').className = 'box';
-            document.getElementById('submit-btn').style.display = 'none';
-            msg.innerText = "Scan a code to begin.";
+        async function handleSubmit() {
+            const timestamp = new Date().toLocaleString();
+            const newEntry = { time: timestamp, qr: qrData, bar: barData };
+
+            // 1. Save to Browser Cache (Permanent until wiped)
+            scanHistory.push(newEntry);
+            localStorage.setItem('scan_history', JSON.stringify(scanHistory));
+            updateHistoryUI();
+
+            // 2. Post to Webhook (Optional - replace URL)
+            const WEBHOOK_URL = "YOUR_WEBHOOK_URL_HERE";
+            try {
+                await fetch(WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(newEntry) });
+            } catch (e) { console.log("Webhook skipped."); }
+
+            alert("Saved to cache!");
+            resetCurrentScan();
         }
 
-        function vibrate() {
-            if (navigator.vibrate) navigator.vibrate(100);
+        function downloadCSV() {
+            if (scanHistory.length === 0) {
+                alert("Cache is empty. Scan and save some data first!");
+                return;
+            }
+
+            let csv = "Timestamp,Code_1,Code_2\n";
+            scanHistory.forEach(row => {
+                // Ensure text is wrapped in quotes to handle commas within data
+                csv += `"${row.time}","${row.qr}","${row.bar}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const dateStr = new Date().toISOString().slice(0,10);
+            
+            a.setAttribute('href', url);
+            a.setAttribute('download', `scanner_export_${dateStr}.csv`);
+            a.click();
+            window.URL.revokeObjectURL(url);
         }
+
+        function updateHistoryUI() {
+            document.getElementById('count').innerText = scanHistory.length;
+            // Disable download button if cache is empty
+            document.getElementById('download-btn').style.opacity = scanHistory.length > 0 ? "1" : "0.5";
+        }
+
+        function resetCurrentScan() {
+            qrData = null; barData = null;
+            document.getElementById('qr-val').innerText = "---";
+            document.getElementById('bar-val').innerText = "---";
+            document.getElementById('qr-box').classList.remove('success');
+            document.getElementById('bar-box').classList.remove('success');
+            document.getElementById('submit-btn').style.display = 'none';
+            msg.innerText = "Scan first code.";
+        }
+
+        function clearFullHistory() {
+            if (confirm("This will delete ALL saved pairs from the browser cache. Continue?")) {
+                scanHistory = [];
+                localStorage.removeItem('scan_history');
+                updateHistoryUI();
+            }
+        }
+
+        function vibrate() { if (navigator.vibrate) navigator.vibrate(100); }
     </script>
 </body>
 </html>
