@@ -115,6 +115,41 @@
             display: block !important;
             animation: flash-animation 0.4s ease-out none;
         }
+        /* Enhanced Success State for Boxes */
+        .success {
+            border-color: #28a745 !important;
+            background-color: #d4edda !important; /* Light green background */
+            position: relative;
+        }
+        
+        /* Add a checkmark badge to the corner of the box */
+        .success::after {
+            content: '✓';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #28a745;
+            color: white;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        /* Ensure the icon inside also turns dark green */
+        .success .status-icon {
+            stroke: #155724 !important;
+        }
+        
+        /* Make the text easier to read against the green background */
+        .success strong, .success #qr-val, .success #bar-val {
+            color: #155724;
+        }        
     </style>
 </head>
 <body>
