@@ -102,7 +102,7 @@
             height: 100%;
             background-color: rgba(40, 167, 69, 0.9); /* Semi-transparent green */
             display: none;
-            z-index: 20;
+            z-index: 100;
             pointer-events: none; /* Allows clicks to pass through */
         }
         
@@ -113,7 +113,7 @@
         
         .trigger-flash {
             display: block !important;
-            animation: flash-animation 0.4s ease-out forwards;
+            animation: flash-animation 0.4s ease-out none;
         }
     </style>
 </head>
@@ -204,15 +204,20 @@
         }
         // Helper function to handle the animation
         function triggerVisualFeedback() {
-            const feedback = document.getElementById('scan-feedback');
+        const feedback = document.getElementById('scan-feedback');
+    
+        // Force immediate display
+        feedback.style.display = 'block';
+        
+        feedback.classList.remove('trigger-flash');
+        void feedback.offsetWidth; // Trigger reflow
+        feedback.classList.add('trigger-flash');
+        
+        // Hide it again after the animation duration (400ms)
+        setTimeout(() => {
+            feedback.style.display = 'none';
             feedback.classList.remove('trigger-flash');
-            void feedback.offsetWidth; // Trigger a reflow to restart animation
-            feedback.classList.add('trigger-flash');
-            
-            // Cleanup class after animation finishes
-            setTimeout(() => {
-                feedback.classList.remove('trigger-flash');
-            }, 400);
+        }, 400);
         }        
 
         async function handleSubmit() {
