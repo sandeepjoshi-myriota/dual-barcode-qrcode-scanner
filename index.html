@@ -35,6 +35,39 @@
         .btn-danger { background: #dc3545; color: white; }
         
         #history-status { margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 5px; font-size: 0.9em; }
+         /* Reset body to prevent accidental scrolling */
+        body, html {
+          margin: 0;
+          padding: 0;
+          height: 100%;
+          overflow: hidden; 
+        }
+        
+        /* The main container that holds everything */
+        .main-wrapper {
+          display: flex;
+          flex-direction: column;
+          height: 100dvh; /* Dynamic viewport height */
+          width: 100%;
+        }
+        
+        /* The area where your scanner lives */
+        #scanner-section {
+          flex: 1; /* This tells the scanner to take up all space EXCEPT what the buttons need */
+          position: relative;
+          overflow: hidden;
+          background-color: #000; /* Standard for camera viewports */
+        }
+        
+        /* The container for your buttons */
+        #control-section {
+          flex-shrink: 0; /* Prevents the buttons from being squashed */
+          padding: 20px;
+          padding-bottom: calc(20px + env(safe-area-inset-bottom)); /* Support for iPhone notches */
+          background: #ffffff;
+          display: flex;
+          justify-content: space-around;
+        }
     </style>
 </head>
 <body>
