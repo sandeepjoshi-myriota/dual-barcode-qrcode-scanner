@@ -69,6 +69,27 @@
         .btn-danger { background: #dc3545; color: white; grid-column: span 2; font-size: 12px; margin-top: 5px; }
         
         #history-status { margin-top: auto; padding-top: 10px; font-size: 0.8em; color: #666; text-align: center; }
+        #scan-feedback {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(40, 167, 69, 0.5); /* Semi-transparent green */
+            display: none;
+            z-index: 20;
+            pointer-events: none; /* Allows clicks to pass through */
+        }
+        
+        @keyframes flash-animation {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        
+        .trigger-flash {
+            display: block !important;
+            animation: flash-animation 0.4s ease-out forwards;
+        }
     </style>
 </head>
 <body>
@@ -80,6 +101,7 @@
 
         <div id="scanner-section">
             <div id="reader"></div>
+            <div id="scan-feedback"></div> 
         </div>
 
         <div id="control-section">
@@ -128,17 +150,31 @@
                 qrData = decodedText;
                 document.getElementById('qr-val').innerText = qrData;
                 document.getElementById('qr-box').classList.add('success');
+                triggerVisualFeedback(); // New feedback call
                 vibrate();
                 msg.innerText = "DM captured. Scan Bar-code.";
             } else if (!barData && decodedText !== qrData) {
                 barData = decodedText;
                 document.getElementById('bar-val').innerText = barData;
                 document.getElementById('bar-box').classList.add('success');
+                triggerVisualFeedback(); // New feedback call
                 vibrate();
                 msg.innerText = "Ready to save.";
                 document.getElementById('submit-btn').style.display = 'block';
             }
         }
+        // Helper function to handle the animation
+        function triggerVisualFeedback() {
+            const feedback = document.getElementById('scan-feedback');
+            feedback.classList.remove('trigger-flash');
+            void feedback.offsetWidth; // Trigger a reflow to restart animation
+            feedback.classList.add('trigger-flash');
+            
+            // Cleanup class after animation finishes
+            setTimeout(() => {
+                feedback.classList.remove('trigger-flash');
+            }, 400);
+        }        
 
         async function handleSubmit() {
             const timestamp = new Date().toLocaleString();
