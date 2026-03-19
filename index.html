@@ -83,17 +83,17 @@
         </div>
 
         <div id="control-section">
-            <h3>Mapping Tool</h3>
+            <h3>Device to SIM Mapping Tool</h3>
             <p id="msg">Initializing camera...</p>
 
             <div class="stats">
-                <div id="qr-box" class="box"><strong>QR</strong><div id="qr-val">---</div></div>
-                <div id="bar-box" class="box"><strong>Bar</strong><div id="bar-val">---</div></div>
+                <div id="qr-box" class="box"><strong>Device DM code</strong><div id="qr-val">---</div></div>
+                <div id="bar-box" class="box"><strong>SIM Bar code</strong><div id="bar-val">---</div></div>
             </div>
 
             <div class="controls">
                 <button id="submit-btn" onclick="handleSubmit()">Save Pair to CSV</button>
-                <button id="download-btn" onclick="downloadCSV()">Download</button>
+                <button id="download-btn" onclick="downloadCSV()">Download CSV</button>
                 <button class="btn-clear" onclick="resetCurrentScan()">Clear</button>
                 <button class="btn-danger" onclick="clearFullHistory()">Wipe All History</button>
             </div>
@@ -129,7 +129,7 @@
                 document.getElementById('qr-val').innerText = qrData;
                 document.getElementById('qr-box').classList.add('success');
                 vibrate();
-                msg.innerText = "QR captured. Scan Bar-code.";
+                msg.innerText = "DM captured. Scan Bar-code.";
             } else if (!barData && decodedText !== qrData) {
                 barData = decodedText;
                 document.getElementById('bar-val').innerText = barData;
@@ -171,7 +171,7 @@
             document.getElementById('qr-box').classList.remove('success');
             document.getElementById('bar-box').classList.remove('success');
             document.getElementById('submit-btn').style.display = 'none';
-            msg.innerText = "Scan the QR code first.";
+            msg.innerText = "Scan the Device DM code first.";
         }
 
         function clearFullHistory() {
