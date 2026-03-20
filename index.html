@@ -149,6 +149,18 @@
         /* Make the text easier to read against the green background */
         .success strong, .success #qr-val, .success #bar-val {
             color: #155724;
+        }    
+        /* Error Flash Feedback */
+        #error-feedback {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(220, 53, 69, 0.7); /* Red overlay */
+            display: none;
+            z-index: 110;
+            pointer-events: none;
         }        
     </style>
 </head>
@@ -162,6 +174,7 @@
         <div id="scanner-section">
             <div id="reader"></div>
             <div id="scan-feedback"></div> 
+            <div id="error-feedback"></div>
         </div>
 
         <div id="control-section">
@@ -219,7 +232,7 @@
             }
         });
 
-        function onScanSuccess(decodedText) {
+     /*   function onScanSuccess(decodedText) {
             if (!qrData) {
                 qrData = decodedText;
                 document.getElementById('qr-val').innerText = qrData;
@@ -236,7 +249,52 @@
                 msg.innerText = "Ready to save.";
                 document.getElementById('submit-btn').style.display = 'block';
             }
+        }*/
+function onScanSuccess(decodedText) {
+    // STAGE 1: Validate and capture DM Code
+    if (!qrData) {
+        // DM code must start with "X" (case-insensitive)
+        if (decodedText.toUpperCase().startsWith('X')) {
+            qrData = decodedText;
+            document.getElementById('qr-val').innerText = qrData;
+            document.getElementById('qr-box').classList.add('success');
+            triggerVisualFeedback('scan-feedback'); // Green Flash
+            vibrate();
+            msg.innerText = "DM captured. Now scan Barcode (starts with 338).";
+        } else {
+            msg.innerText = "Invalid DM Code: Must start with 'X'";
+            triggerVisualFeedback('error-feedback'); // Red Flash
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]); // Triple pulse error
         }
+        return; // Stop processing this scan event
+    }
+
+    // STAGE 2: Validate and capture Barcode
+    if (qrData && !barData) {
+        // Prevent accidental duplicate scanning
+        if (decodedText === qrData) {
+            msg.innerText = "Error: This code is already scanned as DM.";
+            triggerVisualFeedback('error-feedback');
+            return;
+        }
+
+        // Barcode must start with "338"
+        if (decodedText.startsWith('338')) {
+            barData = decodedText;
+            document.getElementById('bar-val').innerText = barData;
+            document.getElementById('bar-box').classList.add('success');
+            triggerVisualFeedback('scan-feedback'); // Green Flash
+            vibrate();
+            msg.innerText = "Ready to save.";
+            document.getElementById('submit-btn').style.display = 'block';
+        } else {
+            msg.innerText = "Invalid Barcode: Must start with '338'";
+            triggerVisualFeedback('error-feedback'); // Red Flash
+            if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+        }
+        return;
+    }
+}        
   
         // Helper function to handle the animation
         function triggerVisualFeedback() {
