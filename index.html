@@ -315,7 +315,8 @@ function onScanSuccess(decodedText) {
         }        
 
         async function handleSubmit() {
-            const timestamp = new Date().toLocaleString();
+           // const timestamp = new Date().toLocaleString();
+            const timestamp = new Date().toISOString();
             const newEntry = { time: timestamp, qr: qrData, bar: barData };
             scanHistory.push(newEntry);
             localStorage.setItem('scan_history', JSON.stringify(scanHistory));
@@ -331,7 +332,7 @@ function onScanSuccess(decodedText) {
         }
 
         function downloadCSV() {
-            let csv = "Timestamp,Code_1,Code_2\n";
+            let csv = "UTC Timestamp,Code_1,Code_2\n";
             scanHistory.forEach(row => { csv += `"${row.time}","${row.qr}","${row.bar}"\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
