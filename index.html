@@ -219,7 +219,7 @@
             }
         });
 
-        function onScanSuccess(decodedText) {
+        /*function onScanSuccess(decodedText) {
             if (!qrData) {
                 qrData = decodedText;
                 document.getElementById('qr-val').innerText = qrData;
@@ -236,7 +236,54 @@
                 msg.innerText = "Ready to save.";
                 document.getElementById('submit-btn').style.display = 'block';
             }
+        }*/
+    function onScanSuccess(decodedText) {
+    // STAGE 1: Looking for the DM Code
+    if (!qrData) {
+        // Check if it starts with 'X' (case insensitive)
+        if (decodedText.toUpperCase().startsWith('X')) {
+            qrData = decodedText;
+            document.getElementById('qr-val').innerText = qrData;
+            document.getElementById('qr-box').classList.add('success');
+            
+            triggerFlash('scan-feedback'); // Green Flash
+            vibrate();
+            msg.innerText = "Step 2: Scan Barcode (starts with 8988)";
+            
+            return; // STOP HERE. Do not check barcode logic until the NEXT scan.
+        } else {
+         alert("Invalid DM: Must start with 'X'");
+         return; // STOP HERE.
         }
+    }
+
+    // STAGE 2: Looking for the Barcode (Only triggers if qrData exists)
+    if (qrData && !barData) {
+        // Prevent scanning the exact same code twice
+        if (decodedText === qrData) {
+            alert("Error: This code is already the DM code");
+            return;
+        }
+
+        // Check if it starts with '8988'
+        if (decodedText.startsWith('8988')) {
+            barData = decodedText;
+            document.getElementById('bar-val').innerText = barData;
+            document.getElementById('bar-box').classList.add('success');
+            
+            triggerFlash('scan-feedback'); // Green Flash
+            vibrate();
+            msg.innerText = "Both captured. Ready to Save Pair.";
+            document.getElementById('submit-btn').style.display = 'block';
+            
+            return; // STOP HERE. Both are captured.
+        } else {
+            alert( "Invalid Barcode: Must start with '8988'");
+            //triggerFlash('error-feedback'); // Red Flash
+            return;
+        }
+    }
+}
         // Helper function to handle the animation
         function triggerVisualFeedback() {
         const feedback = document.getElementById('scan-feedback');
