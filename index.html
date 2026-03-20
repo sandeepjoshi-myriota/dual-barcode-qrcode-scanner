@@ -273,8 +273,8 @@ function onScanSuccess(decodedText) {
     if (qrData && !barData) {
         // Prevent accidental duplicate scanning
         if (decodedText === qrData) {
-            msg.innerText = "Error: This code is already scanned as DM.";
-            triggerVisualFeedback('error-feedback');
+           // msg.innerText = "Error: This code is already scanned as DM.";
+           // triggerVisualFeedback('error-feedback');
             return;
         }
 
@@ -297,8 +297,8 @@ function onScanSuccess(decodedText) {
 }        
   
         // Helper function to handle the animation
-        function triggerVisualFeedback() {
-        const feedback = document.getElementById('scan-feedback');
+        function triggerVisualFeedback(elementId) {
+        const feedback = document.getElementById(elementId);
     
         // Force immediate display
         feedback.style.display = 'block';
