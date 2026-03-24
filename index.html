@@ -274,24 +274,6 @@
             }
         });
 
-     /*   function onScanSuccess(decodedText) {
-            if (!qrData) {
-                qrData = decodedText;
-                document.getElementById('qr-val').innerText = qrData;
-                document.getElementById('qr-box').classList.add('success');
-                triggerVisualFeedback(); // New feedback call
-                vibrate();
-                msg.innerText = "DM captured. Scan Bar-code.";
-            } else if (!barData && decodedText !== qrData) {
-                barData = decodedText;
-                document.getElementById('bar-val').innerText = barData;
-                document.getElementById('bar-box').classList.add('success');
-                triggerVisualFeedback(); // New feedback call
-                vibrate();
-                msg.innerText = "Ready to save.";
-                document.getElementById('submit-btn').style.display = 'block';
-            }
-        }*/
 function onScanSuccess(decodedText) {
     // STAGE 1: Validate and capture DM Code
     if (!qrData) {
@@ -375,7 +357,7 @@ function onScanSuccess(decodedText) {
             resetCurrentScan();
         }
 
-        function downloadCSV() {
+       /* function downloadCSV() {
             let csv = "UTC Timestamp,Code_1,Code_2\n";
             scanHistory.forEach(row => { csv += `"${row.time}","${row.qr}","${row.bar}"\n`; });
             const blob = new Blob([csv], { type: 'text/csv' });
@@ -384,11 +366,37 @@ function onScanSuccess(decodedText) {
             a.href = url;
             a.download = `scanner_export.csv`;
             a.click();
-        }
-
-       /* function updateHistoryUI() {
-            document.getElementById('count').innerText = scanHistory.length;
         }*/
+        function downloadCSV() {
+            if (scanHistory.length === 0) {
+                showToaster("No data to download");
+                return;
+            }
+        
+            // 1. Generate a unique timestamp for the filename (UTC)
+            const now = new Date();
+            const datePart = now.toISOString().split('T')[0].replace(/-/g, ''); // e.g., 20260325
+            const timePart = now.toISOString().split('T')[1].split('.')[0].replace(/:/g, ''); // e.g., 084512
+            const uniqueName = `mapping_export_${datePart}_${timePart}.csv`;
+        
+            // 2. Prepare CSV Content
+            let csv = "Timestamp (UTC),DM_Code,Barcode\n";
+            scanHistory.forEach(row => { 
+                csv += `"${row.time}","${row.qr}","${row.bar}"\n`; 
+            });
+        
+            // 3. Trigger Download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            a.href = url;
+            a.download = uniqueName; // Uses the unique name: mapping_export_20260325_084512.csv
+            document.body.appendChild(a); // Required for some mobile browsers
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
         function updateHistoryUI() {
             const count = scanHistory.length;
             document.getElementById('count').innerText = count;
