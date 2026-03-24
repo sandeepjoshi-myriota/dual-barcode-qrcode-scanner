@@ -167,6 +167,37 @@
             color: #666 !important;
             cursor: not-allowed;
             opacity: 0.6;
+        }
+        #toaster {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #28a745; /* Success Green */
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        .toaster-icon {
+            font-size: 1.2em;
+        }
+        
+        @keyframes slideUp {
+            from { bottom: -50px; opacity: 0; }
+            to { bottom: 30px; opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
         }        
     </style>
 </head>
@@ -212,7 +243,12 @@
                 <button class="btn-clear" onclick="resetCurrentScan()">Clear</button>
                 <button class="btn-danger" onclick="clearFullHistory()">Wipe All History</button>
             </div>
-
+            <div id="toaster" style="display: none;">
+                <div class="toaster-content">
+                    <span class="toaster-icon">✓</span>
+                    <span id="toaster-msg">Saved to cache!</span>
+                </div>
+            </div>             
             <div id="history-status">
                 Items in local cache: <span id="count">0</span>
             </div>
@@ -332,7 +368,9 @@ function onScanSuccess(decodedText) {
                 await fetch(WEBHOOK_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(newEntry) });
             } catch (e) { console.log("Webhook skipped."); }
 
-            alert("Saved to cache!");
+            //alert("Saved to cache!");
+            // Trigger the Toaster Feedback
+            showToaster("Saved to cache!");
             updateHistoryUI();
             resetCurrentScan();
         }
@@ -381,6 +419,24 @@ function onScanSuccess(decodedText) {
         }
 
         function vibrate() { if (navigator.vibrate) navigator.vibrate(100); }
+       
+        // Helper to handle the toaster display logic
+        function showToaster(message) {
+            const toaster = document.getElementById('toaster');
+            const toasterMsg = document.getElementById('toaster-msg');
+            
+            toasterMsg.innerText = message;
+            toaster.style.display = 'flex';
+            toaster.style.animation = 'slideUp 0.3s ease-out';
+        
+            // Auto-hide after 2.5 seconds
+            setTimeout(() => {
+                toaster.style.animation = 'fadeOut 0.5s forwards';
+                setTimeout(() => {
+                    toaster.style.display = 'none';
+                }, 500);
+            }, 2500);
+        }
     </script>
 </body>
 </html>
